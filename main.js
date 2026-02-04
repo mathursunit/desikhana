@@ -199,7 +199,7 @@ function renderLayout() {
       </div>
     </div>
     </div>
-    </div>`;
+  `;
 
   attachEventHandlers();
   // Initial dynamic content rendering is now handled by updateUIFromState()
