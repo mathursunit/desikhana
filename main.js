@@ -148,57 +148,48 @@ async function performSearch(query) {
 
 function renderLayout() {
   app.innerHTML = `
-    <header>
-      <div class="logo-container" style="display:flex; align-items:center; gap:0.75rem;">
-        <img src="/logo.svg" alt="Desi Khana Logo" style="height:40px; border-radius:8px;">
-        <div class="logo">Desi Khana</div>
-      </div>
-    </header>
-
-    <div class="hero">
-      
-      <!-- 1. Search Bar -->
-      <div class="search-container">
-        <form id="searchForm" class="search-box">
-          <input type="text" id="searchInput" class="search-input" placeholder="Search..." autocomplete="off">
-          <button type="submit" class="search-btn">Search</button>
-        </form>
-      </div>
-
-      <!-- 2. Top Level Tabs (Categories) -->
-      <div class="tabs-container" id="categoryTabs">
-        ${CATEGORIES.map(cat => `
-          <button class="nav-tab ${cat.id === state.activeCategory ? 'active' : ''}" data-cat="${cat.id}">
-            ${cat.label}
-          </button>
-        `).join('')}
-      </div>
-
-      <!-- 3. Method Toggles (Smart Filters) -->
-      <div class="method-toggles-container">
-        <div class="method-group">
-           ${METHODS.map(m => `
-             <button class="method-btn ${m.id === state.activeMethod ? 'active' : ''}" data-method="${m.id}">
-               ${m.label}
-             </button>
-           `).join('')}
+    <div id="app" class="app-shell">
+      <!-- 1. Top Bar (Fixed) -->
+      <header class="top-bar">
+        <div class="logo-area">
+           <img src="/logo.svg" alt="Desi Khana" class="brand-logo">
+           <span class="brand-name">Desi Khana</span>
         </div>
+
+        <div class="search-area">
+          <form id="searchForm" class="compact-search">
+            <input type="text" id="searchInput" placeholder="Search recipes..." autocomplete="off">
+            <button type="submit">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </form>
+        </div>
+
+        <div class="actions-area">
+           <!-- Method Toggles (moved to header) -->
+           <div class="method-switch" id="methodSwitch">
+             <!-- Injected by JS -->
+           </div>
+        </div>
+      </header>
+
+      <div class="content-wrapper">
+        <!-- 2. Sidebar Navigation -->
+        <aside class="sidebar" id="sidebarNav">
+          <!-- Categories Injected by JS -->
+        </aside>
+
+        <!-- 3. Main Content -->
+        <main class="main-view">
+           <!-- Pills (Sticky) -->
+           <div class="toolbar-pills" id="pillsTrack"></div>
+           
+           <!-- Grid -->
+           <div class="video-grid" id="videoGrid"></div>
+        </main>
       </div>
-
-      <!-- 4. Subcategory Pills -->
-      <div class="pills-scroll-container">
-         <div class="pills-track" id="pillsTrack">
-           <!-- Injected dynamically based on Active Category -->
-         </div>
-      </div>
-
-    </div>
-
-    <main id="resultsArea">
-      <div class="video-grid" id="videoGrid"></div>
-    </main>
-
-    <!-- Modal -->
+    
+    <!-- Modals -->
     <div id="videoModal" class="modal-overlay">
       <div class="modal-content">
         <button class="close-modal" id="closeVideoModal">&times;</button>
@@ -207,18 +198,22 @@ function renderLayout() {
         </div>
       </div>
     </div>
-  `;
+    </div>
+    </div>`;
 
   attachEventHandlers();
-  renderPills(); // Initial pills render
+  // Initial dynamic content rendering is now handled by updateUIFromState()
 }
+
+// NOTE: Layout is now largely static in `renderLayout` above, 
+// but we need to inject the dynamic content (Sidebar items, Toggles).
 
 function renderPills() {
   const track = document.getElementById('pillsTrack');
   const catObj = CATEGORIES.find(c => c.id === state.activeCategory);
 
   if (!catObj || catObj.subcategories.length === 0) {
-    track.innerHTML = '<span style="color:var(--text-muted); font-size:0.9rem">Browsing all... try searching above!</span>';
+    track.innerHTML = '';
     return;
   }
 
@@ -231,64 +226,62 @@ function renderPills() {
   // Re-attach pill listeners
   track.querySelectorAll('.chip').forEach(btn => {
     btn.addEventListener('click', () => {
-      // Update State
       state.activeSubcategory = btn.dataset.term;
+      renderPills(); // re-render to update active state visual
+      constructAndPerformSearch();
+    });
+  });
+}
 
-      // Update UI (Active Class)
-      track.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active');
+function renderSidebar() {
+  const sidebar = document.getElementById('sidebarNav');
+  sidebar.innerHTML = CATEGORIES.map(cat => `
+    <div class="nav-item ${cat.id === state.activeCategory ? 'active' : ''}" data-cat="${cat.id}">
+       ${cat.label}
+    </div>
+  `).join('');
 
-      // Perform Search
+  sidebar.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      state.activeCategory = item.dataset.cat;
+      // Default to first subcategory if available
+      const catObj = CATEGORIES.find(c => c.id === state.activeCategory);
+      state.activeSubcategory = catObj.subcategories.length > 0 ? catObj.subcategories[0].term : '';
+
+      renderSidebar(); // Update active visual
+      renderPills();
+      constructAndPerformSearch();
+    });
+  });
+}
+
+function renderMethodToggles() {
+  const container = document.getElementById('methodSwitch');
+  container.innerHTML = METHODS.map(m => `
+    <button class="header-toggle ${m.id === state.activeMethod ? 'active' : ''}" data-method="${m.id}">
+      ${m.label}
+    </button>
+  `).join('');
+
+  container.querySelectorAll('.header-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.activeMethod = btn.dataset.method;
+      renderMethodToggles(); // Update visual
       constructAndPerformSearch();
     });
   });
 }
 
 function attachEventHandlers() {
-  // Category Tabs
-  document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      // Update State
-      state.activeCategory = tab.dataset.cat;
-      const catObj = CATEGORIES.find(c => c.id === state.activeCategory);
-
-      // Default to first subcategory if available
-      if (catObj.subcategories.length > 0) {
-        state.activeSubcategory = catObj.subcategories[0].term;
-      } else {
-        state.activeSubcategory = '';
-      }
-
-      // Update UI
-      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-
-      // Re-render Pills
-      renderPills();
-
-      // Trigger Search
-      constructAndPerformSearch();
-    });
-  });
-
-  // Method Toggles
-  document.querySelectorAll('.method-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.activeMethod = btn.dataset.method;
-
-      document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      constructAndPerformSearch();
-    });
-  });
-
   // Search Form
-  document.getElementById('searchForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const val = document.getElementById('searchInput').value;
-    if (val.trim()) performSearch(val);
-  });
+  const form = document.getElementById('searchForm');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = document.getElementById('searchInput').value;
+      if (val.trim()) performSearch(val);
+    });
+  }
 
   // Modals
   document.getElementById('closeVideoModal').addEventListener('click', closeVideo);
@@ -297,8 +290,11 @@ function attachEventHandlers() {
   });
 }
 
+// Initial Render Wrapper
 function updateUIFromState() {
-  // Can add logic here to sync UI with state if needed later
+  renderSidebar();
+  renderMethodToggles();
+  renderPills();
 }
 
 function renderGrid(videos) {
@@ -313,10 +309,10 @@ function renderGrid(videos) {
   videos.forEach((video, index) => {
     const card = document.createElement('div');
     card.className = 'card';
-    card.style.animationDelay = `${index * 50}ms`;
+    card.style.animationDelay = `${index * 50} ms`;
 
     card.innerHTML = `
-      <div class="thumbnail-wrapper">
+    < div class="thumbnail-wrapper" >
         <img src="${video.snippet.thumbnails.high.url}" class="thumbnail-image" alt="${video.snippet.title}">
         <div class="play-icon">
           <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -326,7 +322,7 @@ function renderGrid(videos) {
         <h3 class="card-title">${decodeHTML(video.snippet.title)}</h3>
         <p class="card-channel">${decodeHTML(video.snippet.channelTitle)}</p>
       </div>
-    `;
+  `;
 
     card.addEventListener('click', () => openVideo(video.id.videoId));
     grid.appendChild(card);
