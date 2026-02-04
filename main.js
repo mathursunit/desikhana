@@ -1,7 +1,7 @@
 
 // Configuration
 const CONFIG = {
-  // Hardcoded API Key as requested
+  // Hardcoded API Key
   API_KEY: 'AIzaSyDdrjT9yRjUdGD1fEILSAjJWh_hK7FVZ00'
 };
 
@@ -10,123 +10,112 @@ const decodeKey = (str) => {
   try { return atob(str); } catch (e) { return ''; }
 };
 
-// State
+// --- DATA STRUCTURES (Faceted Search) ---
+
+const METHODS = [
+  { id: 'instantpot', label: 'Instant Pot', queryPrefix: 'Instant Pot' },
+  { id: 'airfryer', label: 'Air Fryer', queryPrefix: 'Air Fryer' },
+  { id: 'traditional', label: 'Traditional', queryPrefix: 'Indian Recipe' }
+];
+
+const CATEGORIES = [
+  {
+    id: 'all',
+    label: 'All Recipes',
+    subcategories: [] // No filters for All, just generic search
+  },
+  {
+    id: 'veg',
+    label: 'Vegetarian',
+    subcategories: [
+      { name: 'Paneer', term: 'Paneer' },
+      { name: 'Dal (Lentils)', term: 'Dal' },
+      { name: 'Sabzi (Dry Veg)', term: 'Sabzi' },
+      { name: 'Rice / Biryani', term: 'Veg Biryani' },
+      { name: 'Indian Breads', term: 'Naan Roti Paratha' },
+      { name: 'Breakfast (Nashta)', term: 'Indian Breakfast' }
+    ]
+  },
+  {
+    id: 'nonveg',
+    label: 'Non-Vegetarian',
+    subcategories: [
+      { name: 'Chicken', term: 'Chicken Curry' },
+      { name: 'Mutton / Lamb', term: 'Mutton Curry' },
+      { name: 'Fish / Seafood', term: 'Fish Curry' },
+      { name: 'Egg', term: 'Egg Curry' },
+      { name: 'Keema', term: 'Keema Recipe' },
+      { name: 'Biryani', term: 'Chicken Biryani' }
+    ]
+  },
+  {
+    id: 'snacks',
+    label: 'Snacks (Chaat)',
+    subcategories: [
+      { name: 'Fried Snacks', term: 'Samosa Pakora' },
+      { name: 'Street Chaat', term: 'Pani Puri Chaat' },
+      { name: 'Tandoori Starters', term: 'Tandoori Tikka' },
+      { name: 'Indo-Chinese', term: 'Manchurian Noodles' }
+    ]
+  },
+  {
+    id: 'dessert',
+    label: 'Desserts',
+    subcategories: [
+      { name: 'Hot Sweets', term: 'Gulab Jamun Halwa' },
+      { name: 'Cold Sweets', term: 'Kulfi Rasmalai' }
+    ]
+  }
+];
+
+// --- STATE MANAGEMENT ---
+
 const state = {
   apiKey: CONFIG.API_KEY,
+  activeCategory: 'veg', // Default to Veg
+  activeMethod: 'instantpot', // Default to Instant Pot
+  activeSubcategory: 'Paneer', // Default term
   videos: [],
   query: ''
 };
 
-// Keyword Lists (Instant Pot Focus)
-const RECIPES = {
-  veg: [
-    { name: "Dal Makhani", query: "Instant Pot Dal Makhani" },
-    { name: "Chana Masala", query: "Instant Pot Chana Masala" },
-    { name: "Palak Paneer", query: "Instant Pot Palak Paneer" },
-    { name: "Aloo Gobi", query: "Instant Pot Aloo Gobi" },
-    { name: "Veg Biryani", query: "Instant Pot Vegetable Biryani" },
-    { name: "Rajma", query: "Instant Pot Rajma Masala" },
-    { name: "Khichdi", query: "Instant Pot Khichdi" },
-    { name: "Pav Bhaji", query: "Instant Pot Pav Bhaji" }
-  ],
-  nonVeg: [
-    { name: "Butter Chicken", query: "Instant Pot Butter Chicken" },
-    { name: "Chicken Biryani", query: "Instant Pot Chicken Biryani" },
-    { name: "Chicken Curry", query: "Instant Pot Chicken Curry Home Style" },
-    { name: "Mutton Rogan Josh", query: "Instant Pot Mutton Rogan Josh" },
-    { name: "Kheema", query: "Instant Pot Keema" },
-    { name: "Egg Curry", query: "Instant Pot Egg Curry" }
-  ]
-};
-
-// DOM Elements
+// --- DOM ELEMENTS ---
 const app = document.getElementById('app');
 
-// App Initialization
+// --- INITIALIZATION ---
+
 function init() {
   renderLayout();
-  // Load a default category on start
-  performSearch(RECIPES.nonVeg[0].query);
+  updateUIFromState(); // Set initial active states
+
+  // Trigger initial search
+  constructAndPerformSearch();
 }
 
-// Layout Rendering
-function renderLayout() {
-  app.innerHTML = `
-    <header>
-      <div class="logo-container" style="display:flex; align-items:center; gap:0.75rem;">
-        <img src="/logo.svg" alt="Desi Khana Logo" style="height:40px; border-radius:8px;">
-        <div class="logo">Desi Khana</div>
-      </div>
-      <!-- Settings removed -->
-    </header>
+// --- LOGIC: SEARCH CONSTRUCTION ---
 
-    <div class="hero">
-      <h1>Discover Details</h1>
-      <p>Quick & Easy Instant Pot Recipes</p>
-      
-      <div class="search-container">
-        <form id="searchForm" class="search-box">
-          <input type="text" id="searchInput" class="search-input" placeholder="Search for a recipe (e.g. 'Paneer')..." autocomplete="off">
-          <button type="submit" class="search-btn">Search</button>
-        </form>
-      </div>
+function constructAndPerformSearch() {
+  // 1. Get Method Prefix (e.g., "Instant Pot")
+  const methodObj = METHODS.find(m => m.id === state.activeMethod);
+  const prefix = methodObj ? methodObj.queryPrefix : 'Indian Recipe';
 
-      <div class="chips-container" id="chipsContainer">
-        <!-- Injected via JS -->
-      </div>
-    </div>
+  // 2. Get Search Term (e.g., "Paneer")
+  // If user typed essentially, that overrides subcategory.
+  // But here we rely on the clicked PILL or generic Category.
 
-    <main id="resultsArea">
-      <!-- Grid or Loader -->
-      <div class="video-grid" id="videoGrid"></div>
-    </main>
+  let searchTerm = state.activeSubcategory;
 
-    <!-- Modals -->
-    <div id="videoModal" class="modal-overlay">
-      <div class="modal-content">
-        <button class="close-modal" id="closeVideoModal">&times;</button>
-        <div class="video-frame-wrapper">
-           <iframe id="videoFrame" class="video-frame" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        </div>
-      </div>
-    </div>
-  `;
+  // 3. Combine
+  const fullQuery = `${prefix} ${searchTerm}`;
 
-  // Inject Chips
-  const chipsContainer = document.getElementById('chipsContainer');
-  const allRecipes = [...RECIPES.veg, ...RECIPES.nonVeg];
+  // 4. Update Search Bar to reflect reality
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) searchInput.value = fullQuery;
 
-  allRecipes.forEach(recipe => {
-    const chip = document.createElement('button');
-    chip.className = 'chip';
-    chip.textContent = recipe.name;
-    chip.onclick = () => {
-      // Highlight active
-      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-
-      // Update Search Box
-      document.getElementById('searchInput').value = recipe.query;
-      performSearch(recipe.query);
-    };
-    chipsContainer.appendChild(chip);
-  });
-
-  // Event Listeners
-  document.getElementById('searchForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const query = document.getElementById('searchInput').value;
-    if (query.trim()) performSearch(query);
-  });
-
-  // Close Modals
-  document.getElementById('closeVideoModal').addEventListener('click', closeVideo);
-  document.getElementById('videoModal').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('videoModal')) closeVideo();
-  });
+  console.log(`Searching for: ${fullQuery}`);
+  performSearch(fullQuery);
 }
 
-// Logic
 async function performSearch(query) {
   state.query = query;
   const grid = document.getElementById('videoGrid');
@@ -138,7 +127,7 @@ async function performSearch(query) {
   }
 
   try {
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=9&q=${encodeURIComponent(query)}&type=video&key=${state.apiKey}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=12&q=${encodeURIComponent(query)}&type=video&key=${state.apiKey}`;
     const response = await fetch(url);
     const data = await response.json();
 
@@ -155,9 +144,166 @@ async function performSearch(query) {
   }
 }
 
+// --- RENDERING ---
+
+function renderLayout() {
+  app.innerHTML = `
+    <header>
+      <div class="logo-container" style="display:flex; align-items:center; gap:0.75rem;">
+        <img src="/logo.svg" alt="Desi Khana Logo" style="height:40px; border-radius:8px;">
+        <div class="logo">Desi Khana</div>
+      </div>
+    </header>
+
+    <div class="hero">
+      
+      <!-- 1. Search Bar -->
+      <div class="search-container">
+        <form id="searchForm" class="search-box">
+          <input type="text" id="searchInput" class="search-input" placeholder="Search..." autocomplete="off">
+          <button type="submit" class="search-btn">Search</button>
+        </form>
+      </div>
+
+      <!-- 2. Top Level Tabs (Categories) -->
+      <div class="tabs-container" id="categoryTabs">
+        ${CATEGORIES.map(cat => `
+          <button class="nav-tab ${cat.id === state.activeCategory ? 'active' : ''}" data-cat="${cat.id}">
+            ${cat.label}
+          </button>
+        `).join('')}
+      </div>
+
+      <!-- 3. Method Toggles (Smart Filters) -->
+      <div class="method-toggles-container">
+        <div class="method-group">
+           ${METHODS.map(m => `
+             <button class="method-btn ${m.id === state.activeMethod ? 'active' : ''}" data-method="${m.id}">
+               ${m.label}
+             </button>
+           `).join('')}
+        </div>
+      </div>
+
+      <!-- 4. Subcategory Pills -->
+      <div class="pills-scroll-container">
+         <div class="pills-track" id="pillsTrack">
+           <!-- Injected dynamically based on Active Category -->
+         </div>
+      </div>
+
+    </div>
+
+    <main id="resultsArea">
+      <div class="video-grid" id="videoGrid"></div>
+    </main>
+
+    <!-- Modal -->
+    <div id="videoModal" class="modal-overlay">
+      <div class="modal-content">
+        <button class="close-modal" id="closeVideoModal">&times;</button>
+        <div class="video-frame-wrapper">
+           <iframe id="videoFrame" class="video-frame" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+  `;
+
+  attachEventHandlers();
+  renderPills(); // Initial pills render
+}
+
+function renderPills() {
+  const track = document.getElementById('pillsTrack');
+  const catObj = CATEGORIES.find(c => c.id === state.activeCategory);
+
+  if (!catObj || catObj.subcategories.length === 0) {
+    track.innerHTML = '<span style="color:var(--text-muted); font-size:0.9rem">Browsing all... try searching above!</span>';
+    return;
+  }
+
+  track.innerHTML = catObj.subcategories.map(sub => `
+    <button class="chip ${sub.term === state.activeSubcategory ? 'active' : ''}" data-term="${sub.term}">
+      ${sub.name}
+    </button>
+  `).join('');
+
+  // Re-attach pill listeners
+  track.querySelectorAll('.chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Update State
+      state.activeSubcategory = btn.dataset.term;
+
+      // Update UI (Active Class)
+      track.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Perform Search
+      constructAndPerformSearch();
+    });
+  });
+}
+
+function attachEventHandlers() {
+  // Category Tabs
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Update State
+      state.activeCategory = tab.dataset.cat;
+      const catObj = CATEGORIES.find(c => c.id === state.activeCategory);
+
+      // Default to first subcategory if available
+      if (catObj.subcategories.length > 0) {
+        state.activeSubcategory = catObj.subcategories[0].term;
+      } else {
+        state.activeSubcategory = '';
+      }
+
+      // Update UI
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // Re-render Pills
+      renderPills();
+
+      // Trigger Search
+      constructAndPerformSearch();
+    });
+  });
+
+  // Method Toggles
+  document.querySelectorAll('.method-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.activeMethod = btn.dataset.method;
+
+      document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      constructAndPerformSearch();
+    });
+  });
+
+  // Search Form
+  document.getElementById('searchForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const val = document.getElementById('searchInput').value;
+    if (val.trim()) performSearch(val);
+  });
+
+  // Modals
+  document.getElementById('closeVideoModal').addEventListener('click', closeVideo);
+  document.getElementById('videoModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('videoModal')) closeVideo();
+  });
+}
+
+function updateUIFromState() {
+  // Can add logic here to sync UI with state if needed later
+}
+
 function renderGrid(videos) {
   const grid = document.getElementById('videoGrid');
-  grid.innerHTML = '';
+  grid.innerHTML = ''; // clear
 
   if (!videos || videos.length === 0) {
     grid.innerHTML = '<p style="text-align:center; color:var(--text-muted)">No recipes found.</p>';
@@ -197,7 +343,7 @@ function openVideo(videoId) {
 function closeVideo() {
   const modal = document.getElementById('videoModal');
   const iframe = document.getElementById('videoFrame');
-  iframe.src = ''; // Stop playback
+  iframe.src = '';
   modal.classList.remove('open');
 }
 
@@ -207,5 +353,5 @@ function decodeHTML(html) {
   return txt.value;
 }
 
-// Start
+// Kickoff
 init();

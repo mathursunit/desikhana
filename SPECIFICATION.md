@@ -115,3 +115,83 @@ To curate the experience, we will use specific search queries combining "Instant
 *   **Implementation**: We will implement the "Bring Your Own Key" (BYOK) model. The user (you) will generate a free API Key from Google Cloud Console and paste it into the app's settings. This keeps usage free and personal to you.
 *   **Alternatives**: Scraping (unstable) or piped instances (often slow/down). We will stick to the official API for reliability and speed.
 
+## 10. Expansion Plan: Comprehensive Recipe Ontology (Planned)
+To create a truly comprehensive "Desi Khana" experience, we will organize recipes into a multi-dimensional category system.
+
+### 10.1. Category Structure
+1.  **Cooking Method**: Instant Pot, Air Fryer, Traditional (Stove Top), Tandoor/Grill.
+2.  **Dietary Preferences**: Vegetarian, Non-Vegetarian, Vegan, Keto (Desi Style), Gluten-Free.
+3.  **Meal Course**: Breakfast (Nashta), Main Course (Lunch/Dinner), Snacks (Chaat/Starters), Desserts (Mithai), Drinks (Sharbat/Lassi).
+4.  **Region**: North Indian (Rich gravies), South Indian (Fermented/Coconut), Indo-Chinese (Fusion), Street Food (Mumbai Style).
+
+### 10.2. Curated Dish List (Draft)
+
+#### **Breakfast (Nashta)**
+*   **Poha**: Flattened rice with mustard seeds and curry leaves.
+*   **Upma**: Semolina porridge with veggies using "Rava".
+*   **Parathas**: Aloo, Gobi, Paneer, Methi (served with curd/pickle).
+*   **South Indian**: Idli, Dosa, Medu Vada, Uttapam.
+*   **Eggs**: Masala Omelette, Egg Bhurji.
+
+#### **Appetizers & Snacks (Chaat)**
+*   **Fried**: Samosa, Pakoras (Onion/Spinach), Bread Pakora.
+*   **Tandoori/Dry**: Paneer Tikka, Chicken Tikka, Seekh Kebab, Tandoori Chicken.
+*   **Street Chaat**: Pani Puri, Bhel Puri, Papdi Chaat, Dahi Vada.
+*   **Indo-Chinese**: Gobi Manchurian (Dry), Chilli Chicken, Hakka Noodles.
+
+#### **Main Course: Vegetarian**
+*   **Paneer Classics**: Paneer Butter Masala, Matar Paneer, Kadai Paneer, Shahi Paneer.
+*   **Lentils (Dal)**: Dal Tadka (Yellow), Dal Makhani (Black), Panchmel Dal.
+*   **Vegetable Sabzi**: Bhindi Masala (Okra), Baingan Bharta (Eggplant), Jeera Aloo, Mix Veg.
+*   **Kofta**: Malai Kofta, Lauki Kofta.
+
+#### **Main Course: Non-Vegetarian**
+*   **Chicken**: Butter Chicken (Makhani), Chicken Tikka Masala, Chicken Chettinad, Chicken Korma.
+*   **Mutton/Lamb**: Rogan Josh (Kashmir), Laal Maas (Rajasthan), Mutton Korma.
+*   **Seafood**: Goan Fish Curry, Prawn Masala, Fish Fry (Amritsari).
+*   **Keema**: Keema Matar (Minced meat with peas).
+
+#### **Rice & Breads**
+*   **Rice**: Vegetable Biryani, Chicken Biryani, Hyderabadi Dum Biryani, Jeera Rice, Curd Rice.
+*   **Breads**: Naan (Garlic/Butter), Roti/Chapati, Bhatura (fried bread for Chole).
+
+#### **Desserts (Mithai)**
+*   **Hot**: Gulab Jamun, Gajar Ka Halwa (Carrot Pudding), Moong Dal Halwa.
+*   **Cold**: Rasmalai, Kheer (Rice Pudding), Kulfi (Mango/Pista), Shrikhand.
+
+## 11. Navigation & Drill-Down Strategy (UX Plan)
+To prevent overwhelming the user with hundreds of chips, we will transition from a flat list to a **Hierarchical Faceted Search**.
+
+### 11.1. Visual Hierarchy
+1.  **Top-Level Tabs (Macro Filter)**:
+    *   Sticky tabs below the search bar to switch broadly: **[All] [Vegetarian] [Non-Veg] [Desserts] [Snacks]**
+    *   This instantly cuts the noise by 50-80%.
+
+2.  **Secondary 'Pill' Filters (Contextual)**:
+    *   When 'Vegetarian' is active, show chips for: *Paneer, Dal, Sabzi, Rice*.
+    *   When 'Non-Veg' is active, show: *Chicken, Mutton, Fish, Egg*.
+    *   These pills are horizontally scrollable (like YouTube's own topic bar).
+
+3.  **"Smart" Filters (The 'Method' Toggle)**:
+    *   A persistent set of toggle buttons for **Preparation Style**:
+        *   🔘 **Instant Pot** (Default)
+        *   🔘 **Air Fryer**
+        *   🔘 **Traditional / Home Style**
+    *   Toggling these updates the background search query (e.g., "Paneer" + "Air Fryer" vs "Paneer" + "Instant Pot").
+
+### 11.2. The "Browse" View (Desktop/Tablet)
+For users who don't know what they want:
+*   **Visual Category Cards**: Instead of just videos, the initial view (before search) shows beautifully designed cards for categories:
+    *   "🥘 Weekend Curry Night"
+    *   "🥣 15-Minute Breakfasts"
+    *   "🍲 Comfort Dals"
+*   Clicking a card pre-loads the relevant search tags.
+
+### 11.3. User Journey Example
+1.  **User wants**: "Vegetarian Dinner made in Instant Pot".
+2.  **Action**: Clicks **[Vegetarian]** Tab.
+3.  **Action**: Toggles **[Instant Pot]** Method.
+4.  **Result**: The grid updates to show generic popular veg IP dishes.
+5.  **Drill Down**: User clicks the **[Paneer]** pill.
+6.  **Refined Result**: Showcases "Matar Paneer", "Paneer Butter Masala", "Palak Paneer" videos.
+

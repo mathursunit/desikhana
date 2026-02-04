@@ -2,7 +2,8 @@
   --bg-dark: #0f0f12;
   --bg-card: #18181b;
   --bg-card-hover: #27272a;
-  --primary: #f59e0b; /* Amber 500 */
+  --primary: #f59e0b;
+  /* Amber 500 */
   --primary-glow: rgba(245, 158, 11, 0.4);
   --text-main: #fafafa;
   --text-muted: #a1a1aa;
@@ -26,7 +27,7 @@ body {
   font-family: var(--font-main);
   min-height: 100vh;
   overflow-x: hidden;
-  background-image: 
+  background-image:
     radial-gradient(circle at 10% 20%, rgba(245, 158, 11, 0.05) 0%, transparent 20%),
     radial-gradient(circle at 90% 80%, rgba(100, 100, 255, 0.05) 0%, transparent 20%);
 }
@@ -152,35 +153,119 @@ header {
   transform: scale(1.05);
 }
 
-/* Chips */
-.chips-container {
+/* --- Navigation Tabs (Categories) --- */
+.tabs-container {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 1.5rem;
   margin-top: 2rem;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 0.5rem;
 }
 
-.chip {
-  background: var(--bg-card);
-  border: 1px solid var(--glass-border);
+.nav-tab {
+  background: none;
+  border: none;
   color: var(--text-muted);
+  font-size: 1.1rem;
+  font-weight: 500;
   padding: 0.5rem 1rem;
-  border-radius: 20px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  user-select: none;
+  position: relative;
+  transition: color 0.3s;
 }
 
-.chip:hover, .chip.active {
-  background: var(--primary-glow);
+.nav-tab:hover,
+.nav-tab.active {
   color: var(--primary);
-  border-color: var(--primary);
 }
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -0.6rem;
+  /* Align with container border */
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 -2px 10px var(--primary-glow);
+}
+
+/* --- Method Toggles (Segmented Control) --- */
+.method-toggles-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.method-group {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 30px;
+  padding: 4px;
+  border: 1px solid var(--glass-border);
+}
+
+.method-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 0.5rem 1.25rem;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.method-btn.active {
+  background: var(--primary);
+  color: #000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.method-btn:hover:not(.active) {
+  color: var(--text-main);
+}
+
+/* --- Pills Scroll Area --- */
+.pills-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  /* Hide scrollbar mostly */
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border) transparent;
+}
+
+.pills-track {
+  display: flex;
+  justify-content: center;
+  /* Center if few pills */
+  gap: 0.75rem;
+  padding: 0 1rem;
+  min-width: max-content;
+}
+
+/* If content overflows, justify-content center breaks scrolling start. 
+   So we use a media query or JS to handle alignment, but for now simple flex is okay. 
+   To support true scroll, we usually remove justify-center or use margin auto. */
+
+@media (max-width: 600px) {
+  .pills-track {
+    justify-content: flex-start;
+  }
+}
+
+/* Update Chips to match new pill style if needed, 
+   but existing .chip style is quite good. just ensuring margins. */
+.chip {
+  white-space: nowrap;
+}
+
 
 /* Grid */
 .video-grid {
@@ -394,14 +479,26 @@ header {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUp {
-  to { opacity: 1; transform: translateY(0); }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
