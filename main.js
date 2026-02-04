@@ -54,7 +54,7 @@ function renderLayout() {
   app.innerHTML = `
     <header>
       <div class="logo-container" style="display:flex; align-items:center; gap:0.75rem;">
-        <img src="/logo.png" alt="Desi Khana Logo" style="height:40px; border-radius:8px;">
+        <img src="/logo.svg" alt="Desi Khana Logo" style="height:40px; border-radius:8px;">
         <div class="logo">Desi Khana</div>
       </div>
       <!-- Settings removed -->
