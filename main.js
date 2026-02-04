@@ -312,7 +312,7 @@ function renderGrid(videos) {
     card.style.animationDelay = `${index * 50} ms`;
 
     card.innerHTML = `
-    < div class="thumbnail-wrapper" >
+      <div class="thumbnail-wrapper">
         <img src="${video.snippet.thumbnails.high.url}" class="thumbnail-image" alt="${video.snippet.title}">
         <div class="play-icon">
           <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -322,7 +322,7 @@ function renderGrid(videos) {
         <h3 class="card-title">${decodeHTML(video.snippet.title)}</h3>
         <p class="card-channel">${decodeHTML(video.snippet.channelTitle)}</p>
       </div>
-  `;
+    `;
 
     card.addEventListener('click', () => openVideo(video.id.videoId));
     grid.appendChild(card);
